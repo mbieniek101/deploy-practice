@@ -1,0 +1,37 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]          # runs automatically when you push to main
+  workflow_dispatch:          # lets you run it manually
+    inputs:
+      target:
+        description: "Where to deploy"
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+env:                          # available to every job
+  APP_NAME: practice-app
+
+jobs:
+  test:
+    runs-on: ubuntu-latest    # GitHub gives you a fresh Linux machine
+    steps:
+      - uses: actions/checkout@v4     # download your repo's code onto it
+      - run: echo "Testing $APP_NAME"
+
+  deploy:
+    needs: test               # only runs if the test job passed
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target || 'staging' }}
+    steps:
+      - name: Deploy
+        env:
+          API_KEY: ${{ secrets.API_KEY }}    # from the environment's secrets
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}   # from the environment's variables
+        run: |
+          echo "Deploying $APP_NAME to ${{ inputs.target || 'staging' }}"
+          echo "Log level is $LOG_LEVEL"
+          echo "API key is $API_KEY"
